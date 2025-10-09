@@ -89,21 +89,23 @@
               </div>
               
               <div class="customer-info">
-                <div class="info-row">
-                  <span class="info-label">证件号码:</span>
-                  <span class="info-value">{{ formatIdCard(customer.idCard) }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">联系电话:</span>
-                  <span class="info-value">{{ customer.phone }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">客户经理:</span>
-                  <span class="info-value">{{ customer.manager }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">所属机构:</span>
-                  <span class="info-value">某某支行分理处</span>
+                <div class="info-row-grid">
+                  <div class="info-item">
+                    <span class="info-label">证件号码:</span>
+                    <span class="info-value">{{ formatIdCard(customer.idCard) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">联系电话:</span>
+                    <span class="info-value">{{ customer.phone }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">客户经理:</span>
+                    <span class="info-value">{{ customer.manager }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">所属机构:</span>
+                    <span class="info-value">某某支行分理处</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -557,7 +559,7 @@ export default {
 
 /* 左侧基本信息 */
 .card-left {
-  flex: 0 0 300px;
+  flex: 0 0 450px;
 }
 
 .customer-header {
@@ -578,25 +580,32 @@ export default {
 }
 
 .customer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-top: 8px;
 }
 
-.info-row {
+.info-row-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+  font-size: 14px;
+}
+
+.info-item {
   display: flex;
   align-items: center;
-  font-size: 14px;
 }
 
 .info-label {
   color: #666;
   margin-right: 8px;
-  min-width: 70px;
+  white-space: nowrap;
 }
 
 .info-value {
   color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 中间标签区域 */
