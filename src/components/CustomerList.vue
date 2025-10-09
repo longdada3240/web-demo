@@ -549,7 +549,7 @@ export default {
 }
 
 .customer-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .customer-name {
@@ -570,6 +570,7 @@ export default {
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
+  margin-top: 12px;
 }
 
 .info-line {
