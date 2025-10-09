@@ -88,11 +88,21 @@
                 </div>
               </div>
               
-              <div class="customer-info-list">
-                <div class="info-line">证件号码: {{ formatIdCard(customer.idCard) }}</div>
-                <div class="info-line">联系电话: {{ customer.phone }}</div>
-                <div class="info-line">客户经理: {{ customer.manager }}</div>
-                <div class="info-line">所属机构: 某某支行分理处</div>
+              <!-- 基本信息行 -->
+              <div class="customer-info-row">
+                <span class="info-item">证件号码: {{ formatIdCard(customer.idCard) }}</span>
+                <span class="info-item">联系电话: {{ customer.phone }}</span>
+                <span class="info-item">客户经理: {{ customer.manager }}</span>
+                <span class="info-item">所属机构: 某某支行分理处</span>
+              </div>
+              
+              <!-- 功能标签 -->
+              <div class="function-tags">
+                <a-tag color="red">基本信息</a-tag>
+                <a-tag color="orange">销售列表</a-tag>
+                <a-tag color="green">申请记录</a-tag>
+                <a-tag color="blue">360画像</a-tag>
+                <a-tag color="purple">服务记录</a-tag>
               </div>
             </div>
 
@@ -127,17 +137,6 @@
                       +{{ customer.rightTags.length - 3 }}
                     </a-tag>
                   </div>
-                </div>
-              </div>
-              
-              <!-- 底部信息栏 -->
-              <div class="card-footer">
-                <div class="footer-item">
-                  <a-tag color="red">基本信息</a-tag>
-                  <a-tag color="orange">销售列表</a-tag>
-                  <a-tag color="green">申请记录</a-tag>
-                  <a-tag color="blue">360画像</a-tag>
-                  <a-tag color="purple">服务记录</a-tag>
                 </div>
               </div>
             </div>
@@ -545,7 +544,8 @@ export default {
 
 /* 左侧基本信息 */
 .card-left {
-  flex: 0 0 280px;
+  flex: 0 0 auto;
+  min-width: 500px;
 }
 
 .customer-header {
@@ -565,17 +565,24 @@ export default {
   flex-wrap: wrap;
 }
 
-.customer-info-list {
+.customer-info-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 14px;
+  gap: 16px;
   margin-top: 12px;
+  font-size: 14px;
+  color: #666;
+  flex-wrap: wrap;
 }
 
-.info-line {
-  color: #666;
-  line-height: 1.6;
+.info-item {
+  white-space: nowrap;
+}
+
+.function-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 /* 中间标签区域 */
@@ -583,7 +590,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .tag-section {
@@ -607,18 +614,6 @@ export default {
 
 .tags-wrapper {
   flex: 1;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.card-footer {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.footer-item {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
