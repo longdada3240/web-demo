@@ -88,25 +88,11 @@
                 </div>
               </div>
               
-              <div class="customer-info">
-                <div class="info-row-grid">
-                  <div class="info-item">
-                    <span class="info-label">证件号码:</span>
-                    <span class="info-value">{{ formatIdCard(customer.idCard) }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">联系电话:</span>
-                    <span class="info-value">{{ customer.phone }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">客户经理:</span>
-                    <span class="info-value">{{ customer.manager }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">所属机构:</span>
-                    <span class="info-value">某某支行分理处</span>
-                  </div>
-                </div>
+              <div class="customer-info-list">
+                <div class="info-line">证件号码: {{ formatIdCard(customer.idCard) }}</div>
+                <div class="info-line">联系电话: {{ customer.phone }}</div>
+                <div class="info-line">客户经理: {{ customer.manager }}</div>
+                <div class="info-line">所属机构: 某某支行分理处</div>
               </div>
             </div>
 
@@ -559,7 +545,7 @@ export default {
 
 /* 左侧基本信息 */
 .card-left {
-  flex: 0 0 450px;
+  flex: 0 0 280px;
 }
 
 .customer-header {
@@ -579,33 +565,16 @@ export default {
   flex-wrap: wrap;
 }
 
-.customer-info {
-  margin-top: 8px;
-}
-
-.info-row-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px 16px;
+.customer-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-size: 14px;
 }
 
-.info-item {
-  display: flex;
-  align-items: center;
-}
-
-.info-label {
+.info-line {
   color: #666;
-  margin-right: 8px;
-  white-space: nowrap;
-}
-
-.info-value {
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.6;
 }
 
 /* 中间标签区域 */
