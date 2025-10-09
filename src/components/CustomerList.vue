@@ -42,11 +42,125 @@
         </el-select>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
         <el-button @click="resetSearch">重置</el-button>
+        
+        <!-- 视图切换 -->
+        <div class="view-switch">
+          <span class="view-label">视图:</span>
+          <el-radio-group v-model="viewType" size="small">
+            <el-radio-button label="card">
+              <i class="el-icon-menu"></i>
+            </el-radio-button>
+            <el-radio-button label="list">
+              <i class="el-icon-s-operation"></i>
+            </el-radio-button>
+          </el-radio-group>
+        </div>
       </div>
     </div>
 
-    <!-- 客户数据表格 -->
-    <div class="table-section">
+    <!-- 卡片视图 -->
+    <div v-if="viewType === 'card'" class="card-view-section">
+      <el-row :gutter="20" v-loading="loading">
+        <el-col 
+          v-for="customer in filteredCustomers" 
+          :key="customer.id" 
+          :xs="24" 
+          :sm="12" 
+          :md="8" 
+          :lg="6"
+          class="card-col">
+          <el-card class="customer-card" shadow="hover">
+            <!-- 卡片头部 -->
+            <div class="card-header">
+              <div class="customer-info">
+                <h3 class="customer-name-title">{{ customer.name }}</h3>
+                <div class="main-tags">
+                  <el-tag 
+                    v-for="tag in customer.mainTags" 
+                    :key="tag.id"
+                    :type="getTagType(tag.label)"
+                    size="mini">
+                    {{ tag.label }}
+                  </el-tag>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 卡片内容 -->
+            <div class="card-body">
+              <div class="info-item">
+                <i class="el-icon-phone"></i>
+                <span>{{ customer.phone }}</span>
+              </div>
+              <div class="info-item">
+                <i class="el-icon-user"></i>
+                <span>{{ customer.manager }}</span>
+              </div>
+              <div class="info-item">
+                <i class="el-icon-time"></i>
+                <span>{{ customer.createTime }}</span>
+              </div>
+              
+              <!-- 标签区域 -->
+              <div class="card-tags">
+                <div class="tag-group">
+                  <label>标签:</label>
+                  <div class="tags-wrapper">
+                    <el-tag 
+                      v-for="tag in customer.leftTags.slice(0, 3)" 
+                      :key="tag.id"
+                      size="mini"
+                      :color="tag.color"
+                      effect="plain">
+                      {{ tag.label }}
+                    </el-tag>
+                    <el-tag 
+                      v-if="customer.leftTags.length > 3"
+                      size="mini"
+                      type="info">
+                      +{{ customer.leftTags.length - 3 }}
+                    </el-tag>
+                  </div>
+                </div>
+                
+                <div class="tag-group" v-if="customer.rightTags.length > 0">
+                  <label>手工标签:</label>
+                  <div class="tags-wrapper">
+                    <el-tag 
+                      v-for="tag in customer.rightTags.slice(0, 2)" 
+                      :key="tag.id"
+                      size="mini"
+                      :color="tag.color"
+                      effect="plain">
+                      {{ tag.label }}
+                    </el-tag>
+                    <el-tag 
+                      v-if="customer.rightTags.length > 2"
+                      size="mini"
+                      type="info">
+                      +{{ customer.rightTags.length - 2 }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 卡片操作按钮 -->
+            <div class="card-actions">
+              <el-button size="small" icon="el-icon-view" @click="viewCustomer(customer)">查看</el-button>
+              <el-button size="small" type="primary" icon="el-icon-edit" @click="editCustomer(customer)">编辑</el-button>
+              <el-button size="small" type="danger" icon="el-icon-delete" @click="deleteCustomer(customer)">删除</el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      
+      <!-- 空状态 -->
+      <el-empty v-if="filteredCustomers.length === 0" description="暂无客户数据"></el-empty>
+    </div>
+
+    <!-- 列表视图（表格） -->
+    <div v-if="viewType === 'list'" class="table-section">
       <el-table
         :data="filteredCustomers"
         v-loading="loading"
@@ -171,6 +285,7 @@ export default {
   data() {
     return {
       loading: false,
+      viewType: 'list', // 视图类型：card-卡片视图，list-列表视图
       // 搜索表单
       searchForm: {
         keyword: '',
@@ -522,6 +637,118 @@ export default {
   width: 150px;
 }
 
+.view-switch {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 8px;
+}
+
+.view-label {
+  color: #606266;
+  font-size: 14px;
+}
+
+/* 卡片视图样式 */
+.card-view-section {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  min-height: 400px;
+}
+
+.card-col {
+  margin-bottom: 20px;
+}
+
+.customer-card {
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.customer-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.customer-name-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.main-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.card-body {
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.info-item i {
+  margin-right: 8px;
+  color: #909399;
+  font-size: 16px;
+}
+
+.card-tags {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ebeef5;
+}
+
+.tag-group {
+  margin-bottom: 8px;
+}
+
+.tag-group label {
+  display: block;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #ebeef5;
+}
+
+.card-actions .el-button {
+  flex: 1;
+  padding: 7px 10px;
+}
+
 .table-section {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-radius: 16px;
@@ -609,6 +836,28 @@ export default {
   .search-input,
   .filter-select {
     max-width: none;
+    width: 100%;
+  }
+  
+  .view-switch {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .card-view-section {
+    padding: 10px;
+  }
+  
+  .card-col {
+    margin-bottom: 15px;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+  }
+  
+  .card-actions .el-button {
     width: 100%;
   }
   
