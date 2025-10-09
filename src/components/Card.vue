@@ -79,7 +79,6 @@
           >
             <a-card class="item-card" :title="item.name" size="small">
               <template #extra>
-                <!-- 修复这里：使用正确的语法 -->
                 <a-tag v-if="item.status === '1'" color="green">启用</a-tag>
                 <a-tag v-else color="red">禁用</a-tag>
               </template>
@@ -90,14 +89,8 @@
               </div>
               
               <template #actions>
-                <span @click="handleEdit(item)">
-                  <!-- <EditOutlined /> -->
-                  编辑
-                </span>
-                <span @click="handleDelete(item)">
-                  <!-- <DeleteOutlined /> -->
-                  删除
-                </span>
+                <span @click="handleEdit(item)">编辑</span>
+                <span @click="handleDelete(item)">删除</span>
               </template>
             </a-card>
           </a-col>
@@ -118,7 +111,6 @@
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'status'">
-              <!-- 修复这里：使用正确的语法 -->
               <a-tag v-if="record.status === '1'" color="green">启用</a-tag>
               <a-tag v-else color="red">禁用</a-tag>
             </template>
@@ -138,15 +130,9 @@
 
 <script>
 import { defineComponent, reactive, ref } from 'vue'
-import EditOutlined from '@ant-design/icons-vue/EditOutlined'
-import DeleteOutlined from '@ant-design/icons-vue/DeleteOutlined'
 
 export default defineComponent({
   name: 'ListPage',
-  components: {
-    EditOutlined,
-    DeleteOutlined
-  },
   setup() {
     // 视图类型
     const viewType = ref('card')
