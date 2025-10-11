@@ -91,7 +91,7 @@ export default {
       customerData: [
         {
           id: 1,
-          name: '客户一',
+          name: '客户一1233是',
           idCard: '110101199001011234',
           phone: '13800138001',
           manager: '张经理',

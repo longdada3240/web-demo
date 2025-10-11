@@ -91,11 +91,18 @@
               </div>
               
               <div class="customer-info-list">
-                 <div class="info-line">证件号码: {{ formatIdCard(customer.idCard) }}</div>
-                 <div class="info-line">联系电话: {{ customer.phone }}</div>
-                 <div class="info-line">客户经理: {{ customer.manager }}</div>
-                 <div class="info-line">所属机构: 某某支行分理处</div>
+                <!-- 客户信息区域 -->
+                <div class="customer-info">
+   
+                    <span class="info-label">身份证：{{ customer.idCard }}</span>
+                
+      
+                    <span class="info-label">电话号码：{{ customer.phone }}</span>
+              
+                    <span class="info-label">客户管户人：{{ customer.manager }}</span>
+  
                 </div>
+              </div>
               
             </div>
 
@@ -135,14 +142,12 @@
               
               <!-- 底部信息栏 -->
               <div class="card-footer">
-                <div class="footer-item">
                   <a-tag color="red">基本信息</a-tag>
                   <a-tag color="orange">销售列表</a-tag>
                   <a-tag color="green">申请记录</a-tag>
                   <a-tag color="blue">360画像</a-tag>
                   <a-tag color="purple">服务记录</a-tag>
                 </div>
-              </div>
             </div>
 
             <!-- 右侧：操作按钮 -->
@@ -519,16 +524,7 @@ export default {
   gap: 8px;
 }
 
-.customer-info-list {
-   display: flex;
-   flex-direction: column;
-   gap: 6px;
-    font-size: 14px;
-  }
-  .info-line {
-    color: #666;
-    line-height: 1.6;
-  }
+
 .view-label {
   color: #666;
   font-size: 14px;
@@ -562,7 +558,7 @@ export default {
 
 /* 左侧基本信息 */
 .card-left {
-  flex: 0 0 280px;
+  flex: 0 0 580px;
 }
 
 .customer-header {
@@ -583,9 +579,16 @@ export default {
 }
 
 .customer-info {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-left: 4px solid #3498db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
 }
 
 .info-row {
@@ -638,17 +641,8 @@ export default {
   flex-wrap: wrap;
 }
 
-.card-footer {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-}
+  
 
-.footer-item {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 
 /* 右侧操作按钮 */
 .card-right {
@@ -693,20 +687,4 @@ export default {
   border-radius: 8px;
 }
 
-/* 响应式 */
-@media (max-width: 1200px) {
-  .card-content {
-    flex-direction: column;
-  }
-  
-  .card-left,
-  .card-right {
-    flex: 1;
-    width: 100%;
-  }
-  
-  .card-right {
-    align-items: flex-start;
-  }
-}
 </style>
