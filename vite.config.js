@@ -1,6 +1,7 @@
 // vite.config.js
 import { defineConfig } from 'vite';
 import { createVuePlugin } from 'vite-plugin-vue2';
+import path from 'path';
 
 export default defineConfig({
   plugins: [createVuePlugin()],
@@ -10,7 +11,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      'vue': 'vue/dist/vue.esm.js'
+      'vue': 'vue/dist/vue.esm.js',
+      '@': path.resolve(__dirname, './src')
     }
   }
 });

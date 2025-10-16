@@ -49,6 +49,9 @@
         
         <a-button type="primary" @click="handleSearch">搜索</a-button>
         <a-button @click="resetSearch">重置</a-button>
+        <a-button @click="showAdvancedFilter = !showAdvancedFilter">
+          <filter-outlined /> {{ showAdvancedFilter ? '收起筛选' : '高级筛选' }}
+        </a-button>
         
         <!-- 视图切换 -->
         <div class="view-switch">
@@ -63,6 +66,177 @@
           </a-radio-group>
         </div>
       </a-space>
+    </a-card>
+
+    <!-- 高级筛选面板 -->
+    <a-card v-if="showAdvancedFilter" class="advanced-filter-section" :bordered="false">
+      <div class="filter-container">
+        <!-- 主标签筛选 -->
+        <div class="filter-row">
+          <div class="filter-label">筛选条件:</div>
+          <div class="filter-options">
+            <a-checkbox-group v-model:value="selectedMainTags" @change="handleMainTagChange">
+              <a-checkbox
+                v-for="tag in mainTagOptions"
+                :key="tag.value"
+                :value="tag.value">
+                {{ tag.label }}
+              </a-checkbox>
+            </a-checkbox-group>
+          </div>
+        </div>
+
+        <!-- 小标签筛选（第二行标题） -->
+        <div class="filter-row">
+          <div class="filter-label">筛选条件:</div>
+          <div class="filter-options">
+            <a-checkbox-group v-model:value="selectedSecondRowTags">
+              <a-checkbox
+                v-for="tag in secondRowTagOptions"
+                :key="tag.value"
+                :value="tag.value">
+                {{ tag.label }}
+              </a-checkbox>
+            </a-checkbox-group>
+          </div>
+        </div>
+
+        <!-- 小标签树形筛选（第三行分类） -->
+        <div class="filter-row">
+          <div class="filter-label">筛选条件:</div>
+          <div class="filter-options">
+            <div class="filter-category-row">
+              <div 
+                v-for="category in smallTagCategories" 
+                :key="category.key"
+                class="category-section">
+                <div class="category-header">
+                  <span class="category-title">分类</span>
+                  <a-radio-group 
+                    v-model:value="selectedCategoryTags[category.key]" 
+                    @change="handleCategoryTagChange">
+                    <a-radio 
+                      v-for="tag in category.tags" 
+                      :key="tag.key" 
+                      :value="tag.key">
+                      {{ tag.label }}
+                    </a-radio>
+                  </a-radio-group>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第四行 - 多个下拉选择（树形结构） -->
+        <div class="filter-row">
+          <div class="filter-label">更多筛选:</div>
+          <div class="filter-options">
+            <a-space wrap>
+              <a-select v-model:value="filterForm.businessInfo" placeholder="业务信息" style="width: 150px" allowClear>
+                <a-select-option value="option1">选项1</a-select-option>
+                <a-select-option value="option2">选项2</a-select-option>
+              </a-select>
+              
+              <a-select v-model:value="filterForm.riskInfo" placeholder="风险信息" style="width: 150px" allowClear>
+                <a-select-option value="low">低风险</a-select-option>
+                <a-select-option value="medium">中风险</a-select-option>
+                <a-select-option value="high">高风险</a-select-option>
+              </a-select>
+              
+              <a-select v-model:value="filterForm.creditInfo" placeholder="征信信息" style="width: 150px" allowClear>
+                <a-select-option value="good">良好</a-select-option>
+                <a-select-option value="normal">一般</a-select-option>
+                <a-select-option value="bad">较差</a-select-option>
+              </a-select>
+              
+              <a-select v-model:value="filterForm.serviceInfo" placeholder="服务信息" style="width: 150px" allowClear>
+                <a-select-option value="vip">VIP服务</a-select-option>
+                <a-select-option value="normal">普通服务</a-select-option>
+              </a-select>
+              
+              <a-select v-model:value="filterForm.pointStatus" placeholder="积分状态" style="width: 150px" allowClear>
+                <a-select-option value="high">高积分</a-select-option>
+                <a-select-option value="medium">中等积分</a-select-option>
+                <a-select-option value="low">低积分</a-select-option>
+              </a-select>
+              
+              <a-select v-model:value="filterForm.manualTag" placeholder="手工标签" style="width: 150px" allowClear>
+                <a-select-option value="tag1">手工标签1</a-select-option>
+                <a-select-option value="tag2">手工标签2</a-select-option>
+              </a-select>
+            </a-space>
+          </div>
+        </div>
+
+        <!-- 已选筛选条件 -->
+        <div class="filter-row" v-if="hasSelectedFilters">
+          <div class="filter-label">已选筛选条件:</div>
+          <div class="selected-filters">
+            <!-- 主标签 -->
+            <template v-if="selectedMainTags.length > 0">
+              <span class="filter-group-title">筛选条件:</span>
+              <a-tag
+                v-for="tag in selectedMainTags"
+                :key="tag"
+                closable
+                @close="removeMainTag(tag)"
+                color="blue">
+                {{ getMainTagLabel(tag) }}
+              </a-tag>
+            </template>
+
+            <!-- 第二行标签 -->
+            <template v-if="selectedSecondRowTags.length > 0">
+              <span class="filter-group-title">筛选条件:</span>
+              <a-tag
+                v-for="tag in selectedSecondRowTags"
+                :key="tag"
+                closable
+                @close="removeSecondRowTag(tag)"
+                color="green">
+                {{ getSecondRowTagLabel(tag) }}
+              </a-tag>
+            </template>
+
+            <!-- 分类标签 -->
+            <template v-for="(value, key) in selectedCategoryTags">
+              <a-tag
+                v-if="value"
+                :key="'cat-' + key"
+                closable
+                @close="removeCategoryTag(key)"
+                color="orange">
+                {{ getCategoryTagLabel(value) }}
+              </a-tag>
+            </template>
+
+            <!-- 其他筛选条件 -->
+            <template v-for="(value, key) in filterForm">
+              <a-tag
+                v-if="value"
+                :key="key"
+                closable
+                @close="clearFilterItem(key)"
+                color="purple">
+                {{ getFilterLabel(key, value) }}
+              </a-tag>
+            </template>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="filter-actions">
+          <a-space>
+            <a-button type="primary" @click="applyFilters">
+              保存
+            </a-button>
+            <a-button @click="clearAllFilters">
+              清除
+            </a-button>
+          </a-space>
+        </div>
+      </div>
     </a-card>
 
     <!-- 卡片视图 -->
@@ -152,17 +326,30 @@
 
             <!-- 右侧：操作按钮 -->
             <div class="card-right">
-              <a-space direction="vertical">
-                <a-button type="link" @click.stop="viewBasicInfo(customer)">
-                  <file-text-outlined /> 基本信息
-                </a-button>
-                <a-button type="link" @click.stop="editCustomer(customer)">
-                  <edit-outlined /> 修改记录
-                </a-button>
-                <a-button type="link" danger @click.stop="deleteCustomer(customer)">
-                  <delete-outlined /> 一键推单
-                </a-button>
-              </a-space>
+              <div class="action-buttons">
+                <!-- 第一行 -->
+                <div class="button-row">
+                  <a-button class="action-btn" @click.stop="viewBasicInfo(customer)">
+                    <img src="@/images/列表.png" alt="基本信息" class="btn-icon" />
+                    <span>基本信息</span>
+                  </a-button>
+                  <a-button class="action-btn" @click.stop="viewModifyRecord(customer)">
+                    <img src="@/images/icon_修改记录.png" alt="修改记录" class="btn-icon" />
+                    <span>修改记录</span>
+                  </a-button>
+                </div>
+                <!-- 第二行 -->
+                <div class="button-row">
+                  <a-button class="action-btn" @click.stop="viewFollowCustomer(customer)">
+                    <img src="@/images/icon_跟进客户.png" alt="跟进客户" class="btn-icon" />
+                    <span>跟进客户</span>
+                  </a-button>
+                  <a-button class="action-btn" @click.stop="viewPushOrder(customer)">
+                    <img src="@/images/icon_一键推单.png" alt="一键推单" class="btn-icon" />
+                    <span>一键推单</span>
+                  </a-button>
+                </div>
+              </div>
             </div>
           </div>
         </a-card>
@@ -268,10 +455,61 @@ export default {
     return {
       loading: false,
       viewType: 'card', // 默认卡片视图
+      showAdvancedFilter: false, // 是否显示高级筛选
       searchForm: {
         keyword: '',
         status: '',
         manager: ''
+      },
+      // 主标签筛选
+      selectedMainTags: [],
+      mainTagOptions: [
+        { label: '选项', value: 'option1' },
+        { label: '选项', value: 'option2' },
+        { label: '选项', value: 'option3' },
+        { label: '选项', value: 'option4' }
+      ],
+      // 第二行标签筛选
+      selectedSecondRowTags: [],
+      secondRowTagOptions: [
+        { label: '选项', value: 'sec_option1' },
+        { label: '选项', value: 'sec_option2' },
+        { label: '选项', value: 'sec_option3' },
+        { label: '选项', value: 'sec_option4' }
+      ],
+      // 分类标签（单选）
+      selectedCategoryTags: {},
+      smallTagCategories: [
+        {
+          key: 'category1',
+          tags: [
+            { label: '选项', key: 'cat1_tag1' },
+            { label: '选项', key: 'cat1_tag2' }
+          ]
+        },
+        {
+          key: 'category2',
+          tags: [
+            { label: '选项', key: 'cat2_tag1' },
+            { label: '选项', key: 'cat2_tag2' }
+          ]
+        }
+      ],
+      // 其他筛选条件
+      filterForm: {
+        businessInfo: undefined,
+        riskInfo: undefined,
+        creditInfo: undefined,
+        serviceInfo: undefined,
+        pointStatus: undefined,
+        manualTag: undefined
+      },
+      // 应用的筛选条件（保存后的）
+      appliedFilters: {
+        mainTags: [],
+        secondRowTags: [],
+        categoryTags: {},
+        otherFilters: {}
       },
       pagination: {
         currentPage: 1,
@@ -361,6 +599,14 @@ export default {
     };
   },
   computed: {
+    // 是否有选中的筛选条件
+    hasSelectedFilters() {
+      return this.selectedMainTags.length > 0 || 
+             this.selectedSecondRowTags.length > 0 ||
+             Object.values(this.selectedCategoryTags).some(v => v) ||
+             Object.values(this.filterForm).some(v => v !== undefined && v !== '');
+    },
+    
     filteredCustomers() {
       let result = this.customers;
       
@@ -430,22 +676,44 @@ export default {
       message.info('跳转到新增客户页面');
     },
     
+    navigateToDetail(customerId, tab) {
+      // 统一的导航方法，优先使用 emit，如果父组件没有监听则使用 router
+      this.$emit('navigate-to-detail', { customerId, tab });
+      
+      // 如果 router 存在，也执行路由跳转（作为备用）
+      if (this.$router) {
+        this.$nextTick(() => {
+          this.$router.push({
+            path: '/customer-detail/' + customerId,
+            query: { tab }
+          }).catch(() => {});
+        });
+      }
+    },
+    
     viewCustomer(customer) {
       // 点击卡片查看客户详情
-      this.$router.push({ 
-        name: 'CustomerDetail', 
-        params: { id: customer.id },
-        query: { tab: 'basic' }
-      });
+      this.navigateToDetail(customer.id, 'basic');
     },
     
     viewBasicInfo(customer) {
-      // 查看基本信息
-      this.$router.push({ 
-        name: 'CustomerDetail', 
-        params: { id: customer.id },
-        query: { tab: 'basic' }
-      });
+      // 查看基本信息 - 跳转到详情页的基本信息tab
+      this.navigateToDetail(customer.id, 'basic');
+    },
+    
+    viewModifyRecord(customer) {
+      // 查看修改记录 - 跳转到详情页的修改记录tab
+      this.navigateToDetail(customer.id, 'modify');
+    },
+    
+    viewFollowCustomer(customer) {
+      // 跟进客户
+      message.info(`跟进客户：${customer.name}`);
+    },
+    
+    viewPushOrder(customer) {
+      // 一键推单 - 跳转到详情页的推单tab
+      this.navigateToDetail(customer.id, 'push');
     },
     
     editCustomer(customer) {
@@ -477,12 +745,146 @@ export default {
     },
     
     handleSizeChange(current, size) {
-      this.pagination.pageSize = size;
       this.pagination.currentPage = 1;
+      this.pagination.pageSize = size;
     },
     
     handleCurrentChange(page) {
       this.pagination.currentPage = page;
+    },
+    
+    // ============ 高级筛选相关方法 ============
+    
+    // 主标签变化
+    handleMainTagChange(checkedValues) {
+      console.log('主标签选择:', checkedValues);
+    },
+    
+    // 分类标签变化
+    handleCategoryTagChange() {
+      console.log('分类标签选择:', this.selectedCategoryTags);
+    },
+    
+    // 获取主标签的显示文本
+    getMainTagLabel(value) {
+      const tag = this.mainTagOptions.find(t => t.value === value);
+      return tag ? tag.label : value;
+    },
+    
+    // 获取第二行标签的显示文本
+    getSecondRowTagLabel(value) {
+      const tag = this.secondRowTagOptions.find(t => t.value === value);
+      return tag ? tag.label : value;
+    },
+    
+    // 获取分类标签的显示文本
+    getCategoryTagLabel(key) {
+      for (const category of this.smallTagCategories) {
+        const tag = category.tags.find(t => t.key === key);
+        if (tag) return tag.label;
+      }
+      return key;
+    },
+    
+    // 获取其他筛选条件的显示文本
+    getFilterLabel(key, value) {
+      const labelMap = {
+        businessInfo: '业务信息',
+        riskInfo: '风险信息',
+        creditInfo: '征信信息',
+        serviceInfo: '服务信息',
+        pointStatus: '积分状态',
+        manualTag: '手工标签'
+      };
+      
+      const valueMap = {
+        // 业务信息
+        option1: '选项1',
+        option2: '选项2',
+        // 风险信息
+        low: '低风险',
+        medium: '中风险',
+        high: '高风险',
+        // 征信信息
+        good: '良好',
+        normal: '一般',
+        bad: '较差',
+        // 服务信息
+        vip: 'VIP服务',
+        // 积分状态
+        high: '高积分',
+        medium: '中等积分',
+        low: '低积分',
+        // manualTag
+        tag1: '手工标签1',
+        tag2: '手工标签2'
+      };
+      
+      return `${labelMap[key]}: ${valueMap[value] || value}`;
+    },
+    
+    // 移除主标签
+    removeMainTag(tag) {
+      const index = this.selectedMainTags.indexOf(tag);
+      if (index > -1) {
+        this.selectedMainTags.splice(index, 1);
+      }
+    },
+    
+    // 移除第二行标签
+    removeSecondRowTag(tag) {
+      const index = this.selectedSecondRowTags.indexOf(tag);
+      if (index > -1) {
+        this.selectedSecondRowTags.splice(index, 1);
+      }
+    },
+    
+    // 移除分类标签
+    removeCategoryTag(categoryKey) {
+      this.selectedCategoryTags[categoryKey] = undefined;
+      this.$forceUpdate(); // 强制更新视图
+    },
+    
+    // 清除单个筛选项
+    clearFilterItem(key) {
+      this.filterForm[key] = undefined;
+    },
+    
+    // 应用筛选条件（保存）
+    applyFilters() {
+      this.appliedFilters = {
+        mainTags: [...this.selectedMainTags],
+        secondRowTags: [...this.selectedSecondRowTags],
+        categoryTags: { ...this.selectedCategoryTags },
+        otherFilters: { ...this.filterForm }
+      };
+      
+      message.success('筛选条件已应用');
+      this.pagination.currentPage = 1;
+    },
+    
+    // 清除所有筛选条件
+    clearAllFilters() {
+      this.selectedMainTags = [];
+      this.selectedSecondRowTags = [];
+      this.selectedCategoryTags = {};
+      this.filterForm = {
+        businessInfo: undefined,
+        riskInfo: undefined,
+        creditInfo: undefined,
+        serviceInfo: undefined,
+        pointStatus: undefined,
+        manualTag: undefined
+      };
+      this.appliedFilters = {
+        mainTags: [],
+        secondRowTags: [],
+        categoryTags: {},
+        otherFilters: {}
+      };
+      
+      message.success('筛选条件已清除');
+      this.pagination.currentPage = 1;
     }
   }
 };
@@ -646,10 +1048,54 @@ export default {
 
 /* 右侧操作按钮 */
 .card-right {
-  flex: 0 0 120px;
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  height: 40px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: white;
+  transition: all 0.3s;
+  font-size: 14px;
+  color: #333;
+}
+
+.action-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+  background: #f0f8ff;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.action-btn span {
+  white-space: nowrap;
 }
 
 /* 列表视图样式 */
@@ -685,6 +1131,122 @@ export default {
   padding: 16px;
   background: white;
   border-radius: 8px;
+}
+
+/* ============ 高级筛选面板样式 ============ */
+.advanced-filter-section {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.filter-label {
+  min-width: 100px;
+  font-weight: 600;
+  color: #333;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+
+.filter-options {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  width: 100%;
+}
+
+.category-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-title {
+  font-weight: 500;
+  color: #666;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+}
+
+.category-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: #1890ff;
+  margin-right: 8px;
+  border-radius: 2px;
+}
+
+.selected-filters {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  min-height: 48px;
+}
+
+.filter-group-title {
+  color: #666;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Checkbox 组样式 */
+:deep(.ant-checkbox-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+:deep(.ant-checkbox-wrapper) {
+  margin: 0;
+}
+
+/* Radio 组样式 */
+:deep(.ant-radio-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+:deep(.ant-radio-wrapper) {
+  margin: 0;
 }
 
 </style>

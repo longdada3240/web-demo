@@ -1,7 +1,10 @@
 // src/router/index.js
-import { createRouter, createWebHistory } from 'vue-router'
+import Vue from 'vue'
+import VueRouter from 'vue-router'
 import CustomerList from '@/components/CustomerList.vue'
 import CustomerDetail from '@/components/CustomerDetail.vue'
+
+Vue.use(VueRouter)
 
 const routes = [
   {
@@ -17,7 +20,7 @@ const routes = [
     }
   },
   {
-    path: '/customer/:id',
+    path: '/customer-detail/:id',
     name: 'CustomerDetail',
     component: CustomerDetail,
     meta: {
@@ -26,8 +29,8 @@ const routes = [
   }
 ]
 
-const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+const router = new VueRouter({
+  mode: 'hash',
   routes
 })
 

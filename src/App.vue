@@ -2,9 +2,12 @@
 <template>
   <div id="app">
     <Layout @menu-select="handleMenuSelect">
-      <!-- 根据选中的菜单显示不同内容 -->
-      <div v-if="currentMenu === '2-1'">
-        <CustomerList />
+      <!-- 如果是路由页面，使用 router-view -->
+      <router-view v-if="isRouterPage"></router-view>
+      
+      <!-- 否则根据选中的菜单显示不同内容 -->
+      <div v-else-if="currentMenu === '2-1'">
+        <CustomerList @navigate-to-detail="handleNavigateToDetail" />
       </div>
 
       <div v-else-if="currentMenu === '2-2'">
@@ -60,9 +63,36 @@ export default {
       currentMenu: '2-2' // 默认显示客户标签页面
     };
   },
+  computed: {
+    isRouterPage() {
+      // 检查当前路由是否是需要使用 router-view 的页面
+      return this.$route && this.$route.path.includes('/customer-detail/');
+    }
+  },
+  watch: {
+    '$route'(to, from) {
+      // 当从详情页返回时，恢复到客户列表菜单
+      if (from.path.includes('/customer-detail/') && !to.path.includes('/customer-detail/')) {
+        this.currentMenu = '2-1';
+      }
+    }
+  },
   methods: {
     handleMenuSelect(menuIndex) {
       this.currentMenu = menuIndex;
+      // 如果选择客户列表菜单，确保路由也跳转到列表页
+      if (menuIndex === '2-1') {
+        if (this.$route.path !== '/customers') {
+          this.$router.push('/customers').catch(() => {});
+        }
+      }
+    },
+    handleNavigateToDetail(data) {
+      // 处理导航到详情页的事件
+      this.$router.push({
+        path: '/customer-detail/' + data.customerId,
+        query: { tab: data.tab }
+      });
     },
     getPageTitle() {
       const titleMap = {
