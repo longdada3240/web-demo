@@ -49,19 +49,30 @@
         
         <a-button type="primary" @click="handleSearch">搜索</a-button>
         <a-button @click="resetSearch">重置</a-button>
-        <a-button @click="showAdvancedFilter = !showAdvancedFilter">
-          <filter-outlined /> {{ showAdvancedFilter ? '收起筛选' : '高级筛选' }}
+        <a-button @click="showAdvancedFilter = !showAdvancedFilter" class="filter-btn">
+          <img 
+            :src="showAdvancedFilter ? require('@/images/icon_排序.png') : require('@/images/标签筛选.png')" 
+            :alt="showAdvancedFilter ? '排序' : '标签筛选'" 
+            class="btn-icon-img" />
+          <span>{{ showAdvancedFilter ? '收起标签' : '标签筛选' }}</span>
+        </a-button>
+        
+        <a-button @click="openSavedFilters" class="filter-btn">
+          <template #icon><folder-open-outlined /></template>
+          <span>已存标签</span>
         </a-button>
         
         <!-- 视图切换 -->
         <div class="view-switch">
           <span class="view-label">视图:</span>
           <a-radio-group v-model:value="viewType" button-style="solid" size="small">
-            <a-radio-button value="card">
-              <appstore-outlined /> 卡片
+            <a-radio-button value="card" class="view-btn">
+              <img src="@/images/卡片.png" alt="卡片" class="btn-icon-img" />
+              <span>卡片</span>
             </a-radio-button>
-            <a-radio-button value="list">
-              <unordered-list-outlined /> 列表
+            <a-radio-button value="list" class="view-btn">
+              <img src="@/images/列表.png" alt="列表" class="btn-icon-img" />
+              <span>列表</span>
             </a-radio-button>
           </a-radio-group>
         </div>
@@ -69,15 +80,20 @@
     </a-card>
 
     <!-- 高级筛选面板 -->
-    <a-card v-if="showAdvancedFilter" class="advanced-filter-section" :bordered="false">
+    <a-card v-if="showAdvancedFilter" class="advanced-filter-section" :bordered="true">
       <div class="filter-container">
-        <!-- 主标签筛选 -->
-        <div class="filter-row">
-          <div class="filter-label">筛选条件:</div>
+        <!-- 动态标签筛选行 -->
+        <div 
+          v-for="(filterRow, index) in tagFilterRows" 
+          :key="filterRow.key"
+          class="filter-row">
+          <div class="filter-label">{{ filterRow.label }}:</div>
           <div class="filter-options">
-            <a-checkbox-group v-model:value="selectedMainTags" @change="handleMainTagChange">
+            <a-checkbox-group 
+              v-model:value="selectedTags[filterRow.key]" 
+              @change="handleTagChange(filterRow.key)">
               <a-checkbox
-                v-for="tag in mainTagOptions"
+                v-for="tag in filterRow.options"
                 :key="tag.value"
                 :value="tag.value">
                 {{ tag.label }}
@@ -86,135 +102,57 @@
           </div>
         </div>
 
-        <!-- 小标签筛选（第二行标题） -->
-        <div class="filter-row">
-          <div class="filter-label">筛选条件:</div>
-          <div class="filter-options">
-            <a-checkbox-group v-model:value="selectedSecondRowTags">
-              <a-checkbox
-                v-for="tag in secondRowTagOptions"
-                :key="tag.value"
-                :value="tag.value">
-                {{ tag.label }}
-              </a-checkbox>
-            </a-checkbox-group>
-          </div>
-        </div>
-
-        <!-- 小标签树形筛选（第三行分类） -->
-        <div class="filter-row">
-          <div class="filter-label">筛选条件:</div>
-          <div class="filter-options">
-            <div class="filter-category-row">
-              <div 
-                v-for="category in smallTagCategories" 
-                :key="category.key"
-                class="category-section">
-                <div class="category-header">
-                  <span class="category-title">分类</span>
-                  <a-radio-group 
-                    v-model:value="selectedCategoryTags[category.key]" 
-                    @change="handleCategoryTagChange">
-                    <a-radio 
-                      v-for="tag in category.tags" 
-                      :key="tag.key" 
-                      :value="tag.key">
-                      {{ tag.label }}
-                    </a-radio>
-                  </a-radio-group>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 第四行 - 多个下拉选择（树形结构） -->
+        <!-- 第四行 - 多个下拉选择（动态筛选） -->
         <div class="filter-row">
           <div class="filter-label">更多筛选:</div>
           <div class="filter-options">
             <a-space wrap>
-              <a-select v-model:value="filterForm.businessInfo" placeholder="业务信息" style="width: 150px" allowClear>
-                <a-select-option value="option1">选项1</a-select-option>
-                <a-select-option value="option2">选项2</a-select-option>
-              </a-select>
-              
-              <a-select v-model:value="filterForm.riskInfo" placeholder="风险信息" style="width: 150px" allowClear>
-                <a-select-option value="low">低风险</a-select-option>
-                <a-select-option value="medium">中风险</a-select-option>
-                <a-select-option value="high">高风险</a-select-option>
-              </a-select>
-              
-              <a-select v-model:value="filterForm.creditInfo" placeholder="征信信息" style="width: 150px" allowClear>
-                <a-select-option value="good">良好</a-select-option>
-                <a-select-option value="normal">一般</a-select-option>
-                <a-select-option value="bad">较差</a-select-option>
-              </a-select>
-              
-              <a-select v-model:value="filterForm.serviceInfo" placeholder="服务信息" style="width: 150px" allowClear>
-                <a-select-option value="vip">VIP服务</a-select-option>
-                <a-select-option value="normal">普通服务</a-select-option>
-              </a-select>
-              
-              <a-select v-model:value="filterForm.pointStatus" placeholder="积分状态" style="width: 150px" allowClear>
-                <a-select-option value="high">高积分</a-select-option>
-                <a-select-option value="medium">中等积分</a-select-option>
-                <a-select-option value="low">低积分</a-select-option>
-              </a-select>
-              
-              <a-select v-model:value="filterForm.manualTag" placeholder="手工标签" style="width: 150px" allowClear>
-                <a-select-option value="tag1">手工标签1</a-select-option>
-                <a-select-option value="tag2">手工标签2</a-select-option>
+              <a-select 
+                v-for="filter in dynamicFilterOptions" 
+                :key="filter.key"
+                v-model:value="filterForm[filter.key]" 
+                :placeholder="filter.placeholder" 
+                mode="multiple"
+                :max-tag-count="0"
+                :max-tag-placeholder="getSelectPlaceholder(filter)"
+                style="width: 150px" 
+                allowClear>
+                <a-select-option 
+                  v-for="option in filter.options" 
+                  :key="option.value" 
+                  :value="option.value">
+                  {{ option.label }}
+                </a-select-option>
               </a-select>
             </a-space>
           </div>
         </div>
 
         <!-- 已选筛选条件 -->
-        <div class="filter-row" v-if="hasSelectedFilters">
+        <div class="filter-row">
           <div class="filter-label">已选筛选条件:</div>
           <div class="selected-filters">
-            <!-- 主标签 -->
-            <template v-if="selectedMainTags.length > 0">
-              <span class="filter-group-title">筛选条件:</span>
+            <!-- 动态标签 -->
+            <template v-for="(filterRow, rowIndex) in tagFilterRows">
+              <span 
+                v-if="selectedTags[filterRow.key] && selectedTags[filterRow.key].length > 0"
+                :key="'title-' + filterRow.key"
+                class="filter-group-title">{{ filterRow.label }}:</span>
               <a-tag
-                v-for="tag in selectedMainTags"
-                :key="tag"
+                v-for="tagValue in selectedTags[filterRow.key]"
+                v-if="selectedTags[filterRow.key] && selectedTags[filterRow.key].length > 0"
+                :key="filterRow.key + '-' + tagValue"
                 closable
-                @close="removeMainTag(tag)"
-                color="blue">
-                {{ getMainTagLabel(tag) }}
-              </a-tag>
-            </template>
-
-            <!-- 第二行标签 -->
-            <template v-if="selectedSecondRowTags.length > 0">
-              <span class="filter-group-title">筛选条件:</span>
-              <a-tag
-                v-for="tag in selectedSecondRowTags"
-                :key="tag"
-                closable
-                @close="removeSecondRowTag(tag)"
-                color="green">
-                {{ getSecondRowTagLabel(tag) }}
-              </a-tag>
-            </template>
-
-            <!-- 分类标签 -->
-            <template v-for="(value, key) in selectedCategoryTags">
-              <a-tag
-                v-if="value"
-                :key="'cat-' + key"
-                closable
-                @close="removeCategoryTag(key)"
-                color="orange">
-                {{ getCategoryTagLabel(value) }}
+                @close="removeTag(filterRow.key, tagValue)"
+                :color="getTagColor(rowIndex)">
+                {{ getTagLabel(filterRow.key, tagValue) }}
               </a-tag>
             </template>
 
             <!-- 其他筛选条件 -->
             <template v-for="(value, key) in filterForm">
               <a-tag
-                v-if="value"
+                v-if="value && value.length > 0"
                 :key="key"
                 closable
                 @close="clearFilterItem(key)"
@@ -228,8 +166,11 @@
         <!-- 操作按钮 -->
         <div class="filter-actions">
           <a-space>
-            <a-button type="primary" @click="applyFilters">
-              保存
+            <a-button type="primary" @click="showSaveTemplateModal">
+              保存模板
+            </a-button>
+            <a-button @click="applyFilters">
+              应用筛选
             </a-button>
             <a-button @click="clearAllFilters">
               清除
@@ -238,6 +179,86 @@
         </div>
       </div>
     </a-card>
+
+    <!-- 保存/编辑模板对话框 -->
+    <a-modal
+      v-model:visible="saveTemplateModalVisible"
+      :title="templateMode === 'edit' ? '编辑模板名称' : '保存筛选模板'"
+      @ok="saveFilterTemplate"
+      @cancel="cancelTemplateModal">
+      <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+        <a-form-item label="模板名称">
+          <a-input
+            v-model:value="templateName"
+            placeholder="请输入模板名称"
+            @pressEnter="saveFilterTemplate" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 已存标签抽屉 -->
+    <a-drawer
+      :visible="showSavedFilters"
+      title="已存模板"
+      placement="right"
+      width="500"
+      @close="showSavedFilters = false">
+      <div class="saved-templates-list">
+        <div
+          v-for="template in savedTemplates"
+          :key="template.id"
+          class="template-item">
+          <div class="template-header">
+            <span class="template-title">{{ template.name }}</span>
+            <span class="template-time">{{ template.createTime }}</span>
+          </div>
+          
+          <div class="template-filters">
+            <!-- 显示标签筛选条件 -->
+            <template v-for="(filterRow, rowIndex) in tagFilterRows">
+              <div 
+                v-if="template.filters.tags[filterRow.key] && template.filters.tags[filterRow.key].length > 0"
+                :key="filterRow.key"
+                class="filter-group">
+                <span class="filter-label-inline">{{ filterRow.label }}：</span>
+                <a-tag
+                  v-for="tagValue in template.filters.tags[filterRow.key]"
+                  :key="tagValue"
+                  :color="getTagColor(rowIndex)"
+                  size="small">
+                  {{ getTagLabel(filterRow.key, tagValue) }}
+                </a-tag>
+              </div>
+            </template>
+
+            <!-- 显示其他筛选条件 -->
+            <div 
+              v-for="(value, key) in template.filters.otherFilters"
+              v-if="value && ((Array.isArray(value) && value.length > 0) || (!Array.isArray(value) && value))"
+              :key="key"
+              class="filter-group">
+              <a-tag color="purple" size="small">
+                {{ getFilterLabel(key, value) }}
+              </a-tag>
+            </div>
+          </div>
+
+          <div class="template-actions">
+            <a-button size="small" type="primary" @click="loadTemplate(template)">
+              加载
+            </a-button>
+            <a-button size="small" @click="editTemplate(template)">
+              编辑
+            </a-button>
+            <a-button size="small" danger @click="deleteTemplate(template.id)">
+              删除
+            </a-button>
+          </div>
+        </div>
+
+        <a-empty v-if="savedTemplates&&savedTemplates.length === 0" description="暂无保存的模板" />
+      </div>
+    </a-drawer>
 
     <!-- 卡片视图 -->
     <div v-if="viewType === 'card'" class="card-view-section">
@@ -250,79 +271,8 @@
           hoverable
           @click="viewCustomer(customer)">
           <div class="card-content">
-            <!-- 左侧：客户基本信息 -->
-            <div class="card-left">
-              <div class="customer-header">
-                <h3 class="customer-name">{{ customer.name }}</h3>
-                <div class="main-tags">
-                  <a-tag
-                    v-for="tag in customer.mainTags"
-                    :key="tag.id"
-                    :color="getTagColor(tag.label)">
-                    {{ tag.label }}
-                  </a-tag>
-                </div>
-              </div>
-              
-              <div class="customer-info-list">
-                <!-- 客户信息区域 -->
-                <div class="customer-info">
-   
-                    <span class="info-label">身份证：{{ customer.idCard }}</span>
-                
-      
-                    <span class="info-label">电话号码：{{ customer.phone }}</span>
-              
-                    <span class="info-label">客户管户人：{{ customer.manager }}</span>
-  
-                </div>
-              </div>
-              
-            </div>
-
-            <!-- 中间：标签信息 -->
-            <div class="card-middle">
-              <div class="tag-section">
-                <div class="tag-group">
-                  <label>主标签:</label>
-                  <div class="tags-wrapper">
-                    <a-tag
-                      v-for="tag in customer.leftTags.slice(0, 5)"
-                      :key="tag.id"
-                      :color="tag.color">
-                      {{ tag.label }}
-                    </a-tag>
-                    <a-tag v-if="customer.leftTags.length > 5" color="default">
-                      +{{ customer.leftTags.length - 5 }}
-                    </a-tag>
-                  </div>
-                </div>
-                
-                <div class="tag-group" v-if="customer.rightTags.length > 0">
-                  <label>手工标签:</label>
-                  <div class="tags-wrapper">
-                    <a-tag
-                      v-for="tag in customer.rightTags.slice(0, 3)"
-                      :key="tag.id"
-                      :color="tag.color">
-                      {{ tag.label }}
-                    </a-tag>
-                    <a-tag v-if="customer.rightTags.length > 3" color="default">
-                      +{{ customer.rightTags.length - 3 }}
-                    </a-tag>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- 底部信息栏 -->
-              <div class="card-footer">
-                  <a-tag color="red">基本信息</a-tag>
-                  <a-tag color="orange">销售列表</a-tag>
-                  <a-tag color="green">申请记录</a-tag>
-                  <a-tag color="blue">360画像</a-tag>
-                  <a-tag color="purple">服务记录</a-tag>
-                </div>
-            </div>
+            <!-- 客户信息区域（左侧+中间） -->
+            <CustomerCardInfo :customer="customer" />
 
             <!-- 右侧：操作按钮 -->
             <div class="card-right">
@@ -342,7 +292,7 @@
                 <div class="button-row">
                   <a-button class="action-btn" @click.stop="viewFollowCustomer(customer)">
                     <img src="@/images/icon_跟进客户.png" alt="跟进客户" class="btn-icon" />
-                    <span>跟进客户</span>
+                    <span>跟进</span>
                   </a-button>
                   <a-button class="action-btn" @click.stop="viewPushOrder(customer)">
                     <img src="@/images/icon_一键推单.png" alt="一键推单" class="btn-icon" />
@@ -448,9 +398,13 @@
 
 <script>
 import { message, Modal } from 'ant-design-vue';
+import CustomerCardInfo from './CustomerCardInfo.vue';
 
 export default {
   name: 'CustomerList',
+  components: {
+    CustomerCardInfo
+  },
   data() {
     return {
       loading: false,
@@ -461,56 +415,146 @@ export default {
         status: '',
         manager: ''
       },
-      // 主标签筛选
-      selectedMainTags: [],
-      mainTagOptions: [
-        { label: '选项', value: 'option1' },
-        { label: '选项', value: 'option2' },
-        { label: '选项', value: 'option3' },
-        { label: '选项', value: 'option4' }
-      ],
-      // 第二行标签筛选
-      selectedSecondRowTags: [],
-      secondRowTagOptions: [
-        { label: '选项', value: 'sec_option1' },
-        { label: '选项', value: 'sec_option2' },
-        { label: '选项', value: 'sec_option3' },
-        { label: '选项', value: 'sec_option4' }
-      ],
-      // 分类标签（单选）
-      selectedCategoryTags: {},
-      smallTagCategories: [
+      // 动态标签筛选行配置
+      tagFilterRows: [
         {
-          key: 'category1',
-          tags: [
-            { label: '选项', key: 'cat1_tag1' },
-            { label: '选项', key: 'cat1_tag2' }
+          key: 'mainTags',
+          label: '主标签',
+          options: [
+            { label: 'VIP客户', value: 'vip' },
+            { label: '重要客户', value: 'important' },
+            { label: '手机银行', value: 'mobile_bank' },
+            { label: '企业客户', value: 'enterprise' }
           ]
         },
         {
-          key: 'category2',
-          tags: [
-            { label: '选项', key: 'cat2_tag1' },
-            { label: '选项', key: 'cat2_tag2' }
+          key: 'secondTags',
+          label: '次标签',
+          options: [
+            { label: '高价值客户', value: 'high_value' },
+            { label: '活跃客户', value: 'active' },
+            { label: '潜力客户', value: 'potential' },
+            { label: '长期客户', value: 'long_term' }
+          ]
+        },
+        {
+          key: 'businessTags',
+          label: '业务标签',
+          options: [
+            { label: '贷款客户', value: 'loan' },
+            { label: '理财客户', value: 'wealth' },
+            { label: '信用卡客户', value: 'credit_card' },
+            { label: '存款客户', value: 'deposit' }
           ]
         }
       ],
-      // 其他筛选条件
+      // 选中的标签（统一管理）
+      selectedTags: {
+        mainTags: [],
+        secondTags: [],
+        businessTags: []
+      },
+
+      // 动态筛选选项配置
+      dynamicFilterOptions: [
+        {
+          key: 'businessInfo',
+          placeholder: '业务信息',
+          options: [
+            { value: 'option1', label: '选项1' },
+            { value: 'option2', label: '选项2' },
+            { value: 'option3', label: '选项3' }
+          ]
+        },
+        {
+          key: 'riskInfo',
+          placeholder: '风险信息',
+          options: [
+            { value: 'low', label: '低风险' },
+            { value: 'medium', label: '中风险' },
+            { value: 'high', label: '高风险' }
+          ]
+        },
+        {
+          key: 'creditInfo',
+          placeholder: '征信信息',
+          options: [
+            { value: 'good', label: '良好' },
+            { value: 'normal', label: '一般' },
+            { value: 'bad', label: '较差' }
+          ]
+        },
+        {
+          key: 'serviceInfo',
+          placeholder: '服务信息',
+          options: [
+            { value: 'vip', label: 'VIP服务' },
+            { value: 'normal', label: '普通服务' },
+            { value: 'basic', label: '基础服务' }
+          ]
+        },
+        {
+          key: 'pointStatus',
+          placeholder: '积分状态',
+          options: [
+            { value: 'high', label: '高积分' },
+            { value: 'medium', label: '中等积分' },
+            { value: 'low', label: '低积分' }
+          ]
+        },
+        {
+          key: 'manualTag',
+          placeholder: '手工标签',
+          options: [
+            { value: 'tag1', label: '手工标签1' },
+            { value: 'tag2', label: '手工标签2' },
+            { value: 'tag3', label: '手工标签3' }
+          ]
+        },
+        {
+          key: 'customerLevel',
+          placeholder: '客户等级',
+          options: [
+            { value: 'diamond', label: '钻石客户' },
+            { value: 'gold', label: '黄金客户' },
+            { value: 'silver', label: '白银客户' },
+            { value: 'bronze', label: '青铜客户' }
+          ]
+        },
+        {
+          key: 'loanStatus',
+          placeholder: '贷款状态',
+          options: [
+            { value: 'approved', label: '已批准' },
+            { value: 'pending', label: '审批中' },
+            { value: 'rejected', label: '已拒绝' },
+            { value: 'completed', label: '已完成' }
+          ]
+        }
+      ],
+      // 其他筛选条件（在data中直接初始化，确保响应性）
       filterForm: {
-        businessInfo: undefined,
-        riskInfo: undefined,
-        creditInfo: undefined,
-        serviceInfo: undefined,
-        pointStatus: undefined,
-        manualTag: undefined
+        businessInfo: [],
+        riskInfo: [],
+        creditInfo: [],
+        serviceInfo: [],
+        pointStatus: [],
+        manualTag: [],
+        customerLevel: [],
+        loanStatus: []
       },
       // 应用的筛选条件（保存后的）
       appliedFilters: {
-        mainTags: [],
-        secondRowTags: [],
-        categoryTags: {},
+        tags: {},
         otherFilters: {}
       },
+      // 保存模板相关
+      saveTemplateModalVisible: false,
+      templateName: '',
+      templateMode: 'save', // 'save' 或 'edit'
+      editingTemplateId: null, // 正在编辑的模板ID
+      showSavedFilters: false,
+      savedTemplates: [],
       pagination: {
         currentPage: 1,
         pageSize: 10
@@ -533,6 +577,7 @@ export default {
           phone: '13800138001',
           idCard: '110101199001011234',
           manager: '张经理',
+          addrss2: '重庆市江北区鱼嘴镇拓兴时代192号附2号A区A幢18-2',
           createTime: '2024-01-15 10:30:00',
           mainTags: [
             { id: 1, label: '大行签约标签', color: '#f56c6c' },
@@ -556,6 +601,7 @@ export default {
           phone: '13800138002',
           idCard: '110101199002021234',
           manager: '李经理',
+          addrss1: '重庆市江北区鱼嘴镇拓兴时代192号附2号A区A幢18-9',
           createTime: '2024-01-16 14:20:00',
           mainTags: [
             { id: 3, label: '普通客户', color: '#909399' },
@@ -577,6 +623,8 @@ export default {
           phone: '13800138003',
           idCard: '110101199003031234',
           manager: '王经理',
+          addrss1: '重庆市江北区鱼嘴镇拓兴时代192号附2号A区A幢18-9',
+          addrss2: '重庆市江北区鱼嘴镇拓兴时代192号附2号A区A幢18-2',
           createTime: '2024-01-17 09:15:00',
           mainTags: [
             { id: 5, label: '企业客户', color: '#409eff' }
@@ -601,10 +649,9 @@ export default {
   computed: {
     // 是否有选中的筛选条件
     hasSelectedFilters() {
-      return this.selectedMainTags.length > 0 || 
-             this.selectedSecondRowTags.length > 0 ||
-             Object.values(this.selectedCategoryTags).some(v => v) ||
-             Object.values(this.filterForm).some(v => v !== undefined && v !== '');
+      const hasTagSelected = Object.values(this.selectedTags).some(tags => tags && tags.length > 0);
+      const hasFilterSelected = Object.values(this.filterForm).some(v => Array.isArray(v) && v.length > 0);
+      return hasTagSelected || hasFilterSelected;
     },
     
     filteredCustomers() {
@@ -755,107 +802,90 @@ export default {
     
     // ============ 高级筛选相关方法 ============
     
-    // 主标签变化
-    handleMainTagChange(checkedValues) {
-      console.log('主标签选择:', checkedValues);
+    // 标签变化统一处理
+    handleTagChange(filterKey) {
+      console.log(`${filterKey} 标签选择:`, this.selectedTags[filterKey]);
     },
     
-    // 分类标签变化
-    handleCategoryTagChange() {
-      console.log('分类标签选择:', this.selectedCategoryTags);
-    },
-    
-    // 获取主标签的显示文本
-    getMainTagLabel(value) {
-      const tag = this.mainTagOptions.find(t => t.value === value);
-      return tag ? tag.label : value;
-    },
-    
-    // 获取第二行标签的显示文本
-    getSecondRowTagLabel(value) {
-      const tag = this.secondRowTagOptions.find(t => t.value === value);
-      return tag ? tag.label : value;
-    },
-    
-    // 获取分类标签的显示文本
-    getCategoryTagLabel(key) {
-      for (const category of this.smallTagCategories) {
-        const tag = category.tags.find(t => t.key === key);
-        if (tag) return tag.label;
+    // 获取标签的显示文本（统一方法）
+    getTagLabel(filterKey, tagValue) {
+      const filterRow = this.tagFilterRows.find(row => row.key === filterKey);
+      if (filterRow) {
+        const option = filterRow.options.find(opt => opt.value === tagValue);
+        return option ? option.label : tagValue;
       }
-      return key;
+      return tagValue;
     },
     
-    // 获取其他筛选条件的显示文本
+    // 获取标签颜色（根据行索引）
+    getTagColor(rowIndex) {
+      const colors = ['blue', 'green', 'orange', 'cyan', 'purple', 'geekblue'];
+      return colors[rowIndex % colors.length];
+    },
+    
+    // 移除单个标签
+    removeTag(filterKey, tagValue) {
+      const tags = this.selectedTags[filterKey];
+      if (tags) {
+        const index = tags.indexOf(tagValue);
+        if (index > -1) {
+          tags.splice(index, 1);
+        }
+      }
+    },
+    
+    // 获取下拉框的自定义显示文本（带数量）
+    getSelectPlaceholder(filter) {
+      // 直接从 filterForm 获取当前选中的值
+      const selectedValues = this.filterForm[filter.key] || [];
+      const count = Array.isArray(selectedValues) ? selectedValues.length : 0;
+      
+      if (count === 0) {
+        return filter.placeholder;
+      }
+      
+      // 使用圆圈数字Unicode字符
+      const circleNumbers = ['⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+      const countStr = count <= 10 ? circleNumbers[count] : `(${count})`;
+      
+      return `${filter.placeholder}${countStr}`;
+    },
+    
+    // 获取其他筛选条件的显示文本（动态）
     getFilterLabel(key, value) {
-      const labelMap = {
-        businessInfo: '业务信息',
-        riskInfo: '风险信息',
-        creditInfo: '征信信息',
-        serviceInfo: '服务信息',
-        pointStatus: '积分状态',
-        manualTag: '手工标签'
-      };
-      
-      const valueMap = {
-        // 业务信息
-        option1: '选项1',
-        option2: '选项2',
-        // 风险信息
-        low: '低风险',
-        medium: '中风险',
-        high: '高风险',
-        // 征信信息
-        good: '良好',
-        normal: '一般',
-        bad: '较差',
-        // 服务信息
-        vip: 'VIP服务',
-        // 积分状态
-        high: '高积分',
-        medium: '中等积分',
-        low: '低积分',
-        // manualTag
-        tag1: '手工标签1',
-        tag2: '手工标签2'
-      };
-      
-      return `${labelMap[key]}: ${valueMap[value] || value}`;
-    },
-    
-    // 移除主标签
-    removeMainTag(tag) {
-      const index = this.selectedMainTags.indexOf(tag);
-      if (index > -1) {
-        this.selectedMainTags.splice(index, 1);
+      // 从动态配置中查找
+      const filterConfig = this.dynamicFilterOptions.find(f => f.key === key);
+      if (filterConfig) {
+        const label = filterConfig.placeholder;
+        
+        // 如果是数组，处理多个值
+        if (Array.isArray(value)) {
+          const valueLabels = value.map(v => {
+            const option = filterConfig.options.find(o => o.value === v);
+            return option ? option.label : v;
+          }).join('、');
+          return `${label}: ${valueLabels}`;
+        } else {
+          // 单个值
+          const option = filterConfig.options.find(o => o.value === value);
+          const valueLabel = option ? option.label : value;
+          return `${label}: ${valueLabel}`;
+        }
       }
-    },
-    
-    // 移除第二行标签
-    removeSecondRowTag(tag) {
-      const index = this.selectedSecondRowTags.indexOf(tag);
-      if (index > -1) {
-        this.selectedSecondRowTags.splice(index, 1);
-      }
-    },
-    
-    // 移除分类标签
-    removeCategoryTag(categoryKey) {
-      this.selectedCategoryTags[categoryKey] = undefined;
-      this.$forceUpdate(); // 强制更新视图
+      
+      return `${key}: ${value}`;
     },
     
     // 清除单个筛选项
     clearFilterItem(key) {
-      this.filterForm[key] = undefined;
+      this.filterForm[key] = [];
     },
     
     // 应用筛选条件（保存）
     applyFilters() {
+      console.log('应用筛选条件:', this.selectedTags);
       this.appliedFilters = {
-        mainTags: [...this.selectedMainTags],
-        secondRowTags: [...this.selectedSecondRowTags],
-        categoryTags: { ...this.selectedCategoryTags },
+        tags: JSON.parse(JSON.stringify(this.selectedTags)), // 深拷贝
         otherFilters: { ...this.filterForm }
       };
       
@@ -865,26 +895,120 @@ export default {
     
     // 清除所有筛选条件
     clearAllFilters() {
-      this.selectedMainTags = [];
-      this.selectedSecondRowTags = [];
-      this.selectedCategoryTags = {};
-      this.filterForm = {
-        businessInfo: undefined,
-        riskInfo: undefined,
-        creditInfo: undefined,
-        serviceInfo: undefined,
-        pointStatus: undefined,
-        manualTag: undefined
-      };
-      this.appliedFilters = {
-        mainTags: [],
-        secondRowTags: [],
-        categoryTags: {},
-        otherFilters: {}
-      };
+      // 清空所有标签选择
+      this.tagFilterRows.forEach(row => {
+        this.selectedTags[row.key] = [];
+      });
       
+      // 动态清空所有筛选条件（设置为空数组）
+      this.dynamicFilterOptions.forEach(filter => {
+        this.filterForm[filter.key] = [];
+      });
+
       message.success('筛选条件已清除');
-      this.pagination.currentPage = 1;
+    },
+    
+    // ============ 模板管理相关方法 ============
+    
+    // 打开已存标签抽屉
+    openSavedFilters() {
+      this.showSavedFilters = true;
+    },
+    
+    // 显示保存模板对话框
+    showSaveTemplateModal() {
+      if (!this.hasSelectedFilters) {
+        message.warning('请先选择筛选条件');
+        return;
+      }
+      this.templateMode = 'save';
+      this.templateName = '';
+      this.editingTemplateId = null;
+      this.saveTemplateModalVisible = true;
+    },
+    
+    // 保存或编辑筛选模板
+    saveFilterTemplate() {
+      if (!this.templateName.trim()) {
+        message.warning('请输入模板名称');
+        return;
+      }
+      
+      if (this.templateMode === 'edit') {
+        // 编辑模式：只修改模板名称
+        const template = this.savedTemplates.find(t => t.id === this.editingTemplateId);
+        if (template) {
+          template.name = this.templateName;
+          message.success('模板名称已更新');
+        }
+      } else {
+        // 保存模式：创建新模板
+        const template = {
+          id: Date.now(),
+          name: this.templateName,
+          createTime: new Date().toLocaleString('zh-CN'),
+          filters: {
+            tags: JSON.parse(JSON.stringify(this.selectedTags)),
+            otherFilters: JSON.parse(JSON.stringify(this.filterForm))
+          }
+        };
+        this.savedTemplates.push(template);
+        message.success('模板保存成功');
+      }
+      
+      this.saveTemplateModalVisible = false;
+      this.templateName = '';
+      this.editingTemplateId = null;
+    },
+    
+    // 取消模板对话框
+    cancelTemplateModal() {
+      this.saveTemplateModalVisible = false;
+      this.templateName = '';
+      this.templateMode = 'save';
+      this.editingTemplateId = null;
+    },
+    
+    // 加载模板
+    loadTemplate(template) {
+      this.selectedTags = JSON.parse(JSON.stringify(template.filters.tags));
+      this.filterForm = JSON.parse(JSON.stringify(template.filters.otherFilters));
+      
+      // 确保所有 filterForm 的值都是数组
+      this.dynamicFilterOptions.forEach(filter => {
+        if (!Array.isArray(this.filterForm[filter.key])) {
+          this.filterForm[filter.key] = [];
+        }
+      });
+      
+      this.showSavedFilters = false;
+      message.success(`已加载模板: ${template.name}`);
+    },
+    
+    // 编辑模板
+    editTemplate(template) {
+      this.templateMode = 'edit';
+      this.editingTemplateId = template.id;
+      this.templateName = template.name;
+      this.saveTemplateModalVisible = true;
+      this.showSavedFilters = false
+    },
+    
+    // 删除模板
+    deleteTemplate(templateId) {
+      Modal.confirm({
+        title: '确认删除',
+        content: '确定要删除此模板吗？',
+        okText: '确定',
+        cancelText: '取消',
+        onOk: () => {
+          const index = this.savedTemplates.findIndex(t => t.id === templateId);
+          if (index > -1) {
+            this.savedTemplates.splice(index, 1);
+            message.success('删除成功');
+          }
+        }
+      });
     }
   }
 };
@@ -926,10 +1050,36 @@ export default {
   gap: 8px;
 }
 
-
 .view-label {
   color: #666;
   font-size: 14px;
+}
+
+/* 筛选按钮和视图切换按钮的图标样式 */
+.filter-btn,
+.view-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+:deep(.view-btn) {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+:deep(.ant-radio-button-wrapper span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* 卡片视图样式 */
@@ -1059,6 +1209,7 @@ export default {
   flex-direction: column;
   gap: 12px;
   width: 100%;
+  padding: 12px 0;
 }
 
 .button-row {
@@ -1166,42 +1317,6 @@ export default {
   gap: 16px;
 }
 
-.filter-category-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  width: 100%;
-}
-
-.category-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.category-title {
-  font-weight: 500;
-  color: #666;
-  padding: 4px 0;
-  display: flex;
-  align-items: center;
-}
-
-.category-title::before {
-  content: '';
-  width: 4px;
-  height: 16px;
-  background: #1890ff;
-  margin-right: 8px;
-  border-radius: 2px;
-}
-
 .selected-filters {
   flex: 1;
   display: flex;
@@ -1209,7 +1324,7 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 12px;
-  background: #f5f5f5;
+  /* background: #f5f5f5; */
   border-radius: 4px;
   min-height: 48px;
 }
@@ -1247,6 +1362,70 @@ export default {
 
 :deep(.ant-radio-wrapper) {
   margin: 0;
+}
+
+/* ============ 已存标签抽屉样式 ============ */
+.saved-templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.template-item {
+  padding: 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+
+.template-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.template-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.template-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.template-filters {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-label-inline {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.template-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 </style>
