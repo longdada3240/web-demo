@@ -3,6 +3,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import CustomerList from '@/components/CustomerList.vue'
 import CustomerDetail from '@/components/CustomerDetail.vue'
+import FormExample from '@/components/FormExample.vue'
 
 Vue.use(VueRouter)
 
@@ -26,7 +27,15 @@ const routes = [
     meta: {
       title: '客户详情'
     }
-  }
+  },
+  {
+    path: '/form-example',
+    name: 'FormExample',
+    component: FormExample,
+    meta: {
+      title: 'test'
+    }
+  },
 ]
 
 const router = new VueRouter({

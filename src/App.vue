@@ -19,6 +19,9 @@
       <div v-else-if="currentMenu === '3-1'">
         <Card />
       </div>
+      <div v-else-if="currentMenu === '3-2'">
+        <FormExample />
+      </div>
       <div v-else class="page-placeholder">
         <div class="placeholder-content">
           <i class="el-icon-s-home" v-if="currentMenu === '1'"></i>
@@ -48,6 +51,7 @@ import Huax from './components/Test.vue';
 import Test from './components/360.vue';
 import Card from './components/Card.vue';
 import CustomerList from './components/CustomerList.vue';
+import FormExample from './components/FormExample.vue';
 
 export default {
   name: 'App',
@@ -56,7 +60,8 @@ export default {
     Test,
     Huax,
     Card,
-    CustomerList
+    CustomerList,
+    FormExample,
   },
   data() {
     return {
@@ -101,7 +106,7 @@ export default {
         '2-2': '客户标签',
         '2-3': '客户分组',
         '3-1': '卡片视图',
-        '3-2': '订单统计',
+        '3-2': '表单示例',
         '4-1': '收支明细',
         '4-2': '财务报表',
         '5-1': '用户管理',

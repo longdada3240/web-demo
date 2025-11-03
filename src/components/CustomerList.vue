@@ -9,12 +9,20 @@
       </div>
       <div class="header-right">
         <a-space>
+          <a-button 
+            v-if="selectedCustomers.length > 0"
+            type="primary" 
+            danger
+            @click="transferCustomers">
+            <a-icon type="swap" />
+            移交 ({{ selectedCustomers.length }})
+          </a-button>
           <a-button type="primary" @click="addCustomer">
-            <template #icon><plus-outlined /></template>
+            <a-icon type="plus" />
             新增客户
           </a-button>
           <a-button @click="exportData">
-            <template #icon><download-outlined /></template>
+            <a-icon type="download" />
             导出数据
           </a-button>
         </a-space>
@@ -29,7 +37,7 @@
           placeholder="请输入客户姓名、电话或身份证号"
           style="width: 300px"
           @pressEnter="handleSearch">
-          <template #prefix><search-outlined /></template>
+          <a-icon slot="prefix" type="search" />
         </a-input>
         
         <a-select v-model:value="searchForm.status" placeholder="客户状态" style="width: 150px">
@@ -58,7 +66,7 @@
         </a-button>
         
         <a-button @click="openSavedFilters" class="filter-btn">
-          <template #icon><folder-open-outlined /></template>
+          <a-icon type="folder-open" />
           <span>已存标签</span>
         </a-button>
         
@@ -191,6 +199,8 @@
           <a-input
             v-model:value="templateName"
             placeholder="请输入模板名称"
+            :maxlength="20"
+            show-count
             @pressEnter="saveFilterTemplate" />
         </a-form-item>
       </a-form>
@@ -260,6 +270,150 @@
       </div>
     </a-drawer>
 
+    <!-- 跟进客户抽屉 -->
+    <a-drawer
+      :visible="showFollowDrawer"
+      title="跟进"
+      placement="right"
+      :width="500"
+      :closable="true"
+      @close="closeFollowDrawer">
+      <div class="follow-drawer-content">
+        <!-- 客户基本信息 -->
+        <div class="customer-info-header">
+          <div class="customer-basic">
+            <div class="customer-avatar">
+              <img src="@/images/icon_跟进客户.png" alt="客户" />
+            </div>
+            <div class="customer-detail">
+              <div class="customer-name">{{ currentFollowCustomer.name }}</div>
+              <div class="customer-phone">
+                <span class="phone-icon">📱</span>
+                {{ currentFollowCustomer.phone }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 营销提示 -->
+        <div class="marketing-tips" v-if="marketingTips && marketingTips.length > 0">
+          <div class="tips-label">营销提醒:</div>
+          <div class="tips-content">
+            {{ marketingTips.join('、') }}
+          </div>
+          <a class="more-tips-link">更多提醒进入 ›</a>
+        </div>
+
+        <!-- 跟进表单 -->
+        <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" class="follow-form">
+          <!-- 关联电机 -->
+          <a-form-item label="关联电机:">
+            <a-select 
+              v-model="followForm.relatedMotor" 
+              placeholder="最终贷2025年9月截止">
+              <a-select-option value="motor1">最终贷2025年9月截止</a-select-option>
+              <a-select-option value="motor2">其他选项</a-select-option>
+            </a-select>
+          </a-form-item>
+
+          <!-- 跟进日期 -->
+          <a-form-item label="跟进日期:">
+            <a-date-picker 
+              v-model="followForm.followDate" 
+              style="width: 100%"
+              :disabled-date="disabledDate"
+              format="YYYY-MM-DD" />
+          </a-form-item>
+
+          <!-- 跟进方式 -->
+          <a-form-item label="跟进方式:">
+            <a-select 
+              v-model="followForm.followMethod" 
+              placeholder="请选择">
+              <a-select-option value="phone">电话</a-select-option>
+              <a-select-option value="wechat">微信</a-select-option>
+              <a-select-option value="visit">上门拜访</a-select-option>
+              <a-select-option value="other">其他</a-select-option>
+            </a-select>
+          </a-form-item>
+
+          <!-- 是否跟进成功 -->
+          <a-form-item label="是否跟进成功:">
+            <a-radio-group v-model="followForm.isSuccess">
+              <a-radio :value="true">是</a-radio>
+              <a-radio :value="false">否</a-radio>
+            </a-radio-group>
+          </a-form-item>
+
+          <!-- 客户意向 -->
+          <a-form-item label="客户意向:">
+            <a-select 
+              v-model="followForm.intention" 
+              placeholder="请选择">
+              <a-select-option value="high">意向强烈</a-select-option>
+              <a-select-option value="medium">有意向</a-select-option>
+              <a-select-option value="low">意向一般</a-select-option>
+              <a-select-option value="none">无意向</a-select-option>
+            </a-select>
+          </a-form-item>
+
+          <!-- 跟进内容 -->
+          <a-form-item label="跟进内容:">
+            <a-textarea 
+              v-model="followForm.content" 
+              placeholder="请输入跟进内容"
+              :rows="4"
+              :maxlength="500"
+              show-count />
+          </a-form-item>
+
+          <!-- 资料照片 -->
+          <a-form-item label="资料照片:">
+            <a-upload
+              :file-list="followForm.fileList"
+              list-type="picture-card"
+              :before-upload="beforeUpload"
+              @preview="handlePreview"
+              @remove="handleRemove">
+              <div v-if="followForm.fileList.length < 5">
+                <a-icon type="plus" />
+                <div class="ant-upload-text">上传</div>
+              </div>
+            </a-upload>
+          </a-form-item>
+        </a-form>
+
+        <!-- 底部操作按钮 -->
+        <div class="follow-drawer-footer">
+          <a-space :size="12">
+            <a-button type="danger" @click="submitFollow">
+              提交
+            </a-button>
+            <a-button @click="saveFollowDraft">
+              暂存
+            </a-button>
+            <a-button @click="openContactChannel">
+              关闭通道
+            </a-button>
+            <a-button @click="oneClickSign">
+              一键跟签
+            </a-button>
+            <a-button @click="closeFollowDrawer">
+              返回
+            </a-button>
+          </a-space>
+        </div>
+      </div>
+    </a-drawer>
+
+    <!-- 图片预览 Modal -->
+    <a-modal
+      :visible="previewVisible"
+      :footer="null"
+      @cancel="previewVisible = false">
+      <img :src="previewImage" style="width: 100%" />
+    </a-modal>
+
     <!-- 卡片视图 -->
     <div v-if="viewType === 'card'" class="card-view-section">
       <a-spin :spinning="loading">
@@ -271,30 +425,38 @@
           hoverable
           @click="viewCustomer(customer)">
           <div class="card-content">
+            <!-- 选择框 -->
+            <div>
+              <a-checkbox 
+                :checked="isCustomerSelected(customer.id)"
+                @change="toggleCustomerSelection(customer.id)">
+              </a-checkbox>
+            </div>
+            
             <!-- 客户信息区域（左侧+中间） -->
             <CustomerCardInfo :customer="customer" />
 
             <!-- 右侧：操作按钮 -->
-            <div class="card-right">
+            <div class="card-right" @click.stop>
               <div class="action-buttons">
                 <!-- 第一行 -->
                 <div class="button-row">
-                  <a-button class="action-btn" @click.stop="viewBasicInfo(customer)">
+                  <a-button class="action-btn" @click="viewBasicInfo(customer)">
                     <img src="@/images/列表.png" alt="基本信息" class="btn-icon" />
                     <span>基本信息</span>
                   </a-button>
-                  <a-button class="action-btn" @click.stop="viewModifyRecord(customer)">
+                  <a-button class="action-btn" @click="viewModifyRecord(customer)">
                     <img src="@/images/icon_修改记录.png" alt="修改记录" class="btn-icon" />
                     <span>修改记录</span>
                   </a-button>
                 </div>
                 <!-- 第二行 -->
                 <div class="button-row">
-                  <a-button class="action-btn" @click.stop="viewFollowCustomer(customer)">
+                  <a-button class="action-btn" @click="viewFollowCustomer(customer)">
                     <img src="@/images/icon_跟进客户.png" alt="跟进客户" class="btn-icon" />
                     <span>跟进</span>
                   </a-button>
-                  <a-button class="action-btn" @click.stop="viewPushOrder(customer)">
+                  <a-button class="action-btn" @click="viewPushOrder(customer)">
                     <img src="@/images/icon_一键推单.png" alt="一键推单" class="btn-icon" />
                     <span>一键推单</span>
                   </a-button>
@@ -316,6 +478,7 @@
         :data-source="filteredCustomers"
         :loading="loading"
         :pagination="false"
+        :row-selection="rowSelection"
         row-key="id"
         @change="handleSelectionChange">
         
@@ -382,6 +545,12 @@
 
     <!-- 分页 -->
     <div class="pagination-section">
+      <div class="pagination-left">
+        <a-space v-if="filteredCustomers.length > 0">
+          <a-button @click="selectAll">全选</a-button>
+          <a-button @click="selectReverse">反选</a-button>
+        </a-space>
+      </div>
       <a-pagination
         v-model:current="pagination.currentPage"
         v-model:page-size="pagination.pageSize"
@@ -399,6 +568,7 @@
 <script>
 import { message, Modal } from 'ant-design-vue';
 import CustomerCardInfo from './CustomerCardInfo.vue';
+import moment from 'moment';
 
 export default {
   name: 'CustomerList',
@@ -410,6 +580,7 @@ export default {
       loading: false,
       viewType: 'card', // 默认卡片视图
       showAdvancedFilter: false, // 是否显示高级筛选
+      selectedCustomers: [], // 选中的客户ID列表
       searchForm: {
         keyword: '',
         status: '',
@@ -555,6 +726,23 @@ export default {
       editingTemplateId: null, // 正在编辑的模板ID
       showSavedFilters: false,
       savedTemplates: [],
+      
+      // 跟进客户相关
+      showFollowDrawer: false,
+      currentFollowCustomer: {},
+      marketingTips: [],
+      followForm: {
+        relatedMotor: '',
+        followDate: null,
+        followMethod: '',
+        isSuccess: null,
+        intention: '',
+        content: '',
+        fileList: []
+      },
+      previewVisible: false,
+      previewImage: '',
+      
       pagination: {
         currentPage: 1,
         pageSize: 10
@@ -647,6 +835,16 @@ export default {
     };
   },
   computed: {
+    // 列表视图行选择配置
+    rowSelection() {
+      return {
+        selectedRowKeys: this.selectedCustomers,
+        onChange: (selectedRowKeys, selectedRows) => {
+          this.selectedCustomers = selectedRowKeys;
+        }
+      };
+    },
+    
     // 是否有选中的筛选条件
     hasSelectedFilters() {
       const hasTagSelected = Object.values(this.selectedTags).some(tags => tags && tags.length > 0);
@@ -744,21 +942,54 @@ export default {
     },
     
     viewBasicInfo(customer) {
+      console.log('点击基本信息按钮，客户信息:', customer);
       // 查看基本信息 - 跳转到详情页的基本信息tab
       this.navigateToDetail(customer.id, 'basic');
     },
     
     viewModifyRecord(customer) {
+      console.log('点击修改记录按钮，客户信息:', customer);
       // 查看修改记录 - 跳转到详情页的修改记录tab
       this.navigateToDetail(customer.id, 'modify');
     },
     
     viewFollowCustomer(customer) {
-      // 跟进客户
-      message.info(`跟进客户：${customer.name}`);
+      console.log('点击跟进按钮，客户信息:', customer);
+      
+      // 打开跟进客户抽屉
+      this.currentFollowCustomer = customer;
+      
+      // 模拟营销提示数据
+      this.marketingTips = [
+        `25年9月份客户白名单25年9月份客户白名单25年9月份客户白名单25年9月份客户白名单25年9月份的客户白名单`
+      ];
+      
+      // 重置表单
+      this.followForm = {
+        relatedMotor: 'motor1',
+        followDate: null,
+        followMethod: '',
+        isSuccess: null,
+        intention: '',
+        content: '',
+        fileList: []
+      };
+      
+      // 默认跟进日期为今天
+      this.followForm.followDate = moment();
+      
+      console.log('准备打开抽屉，showFollowDrawer:', this.showFollowDrawer);
+      this.showFollowDrawer = true;
+      console.log('抽屉已设置为打开状态，showFollowDrawer:', this.showFollowDrawer);
+      
+      // 使用 $nextTick 确保数据更新
+      this.$nextTick(() => {
+        console.log('nextTick - showFollowDrawer:', this.showFollowDrawer);
+      });
     },
     
     viewPushOrder(customer) {
+      console.log('点击一键推单按钮，客户信息:', customer);
       // 一键推单 - 跳转到详情页的推单tab
       this.navigateToDetail(customer.id, 'push');
     },
@@ -1009,6 +1240,197 @@ export default {
           }
         }
       });
+    },
+    
+    // ============ 跟进客户相关方法 ============
+    
+    // 关闭跟进抽屉
+    closeFollowDrawer() {
+      this.showFollowDrawer = false;
+      this.currentFollowCustomer = {};
+      this.marketingTips = [];
+      this.followForm = {
+        relatedMotor: '',
+        followDate: null,
+        followMethod: '',
+        isSuccess: null,
+        intention: '',
+        content: '',
+        fileList: []
+      };
+    },
+    
+    // 禁用未来日期
+    disabledDate(current) {
+      // 不能选择未来的日期
+      return current && current > moment().endOf('day');
+    },
+    
+    // 文件上传前的处理
+    beforeUpload(file) {
+      const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+      if (!isJpgOrPng) {
+        message.error('只能上传 JPG/PNG 格式的图片!');
+        return false;
+      }
+      const isLt2M = file.size / 1024 / 1024 < 2;
+      if (!isLt2M) {
+        message.error('图片大小不能超过 2MB!');
+        return false;
+      }
+      
+      // 这里模拟上传，实际项目中应该调用上传接口
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        this.followForm.fileList.push({
+          uid: file.uid,
+          name: file.name,
+          status: 'done',
+          url: reader.result,
+          thumbUrl: reader.result
+        });
+      };
+      
+      return false; // 阻止自动上传
+    },
+    
+    // 预览图片
+    handlePreview(file) {
+      this.previewImage = file.url || file.thumbUrl;
+      this.previewVisible = true;
+    },
+    
+    // 删除图片
+    handleRemove(file) {
+      const index = this.followForm.fileList.findIndex(item => item.uid === file.uid);
+      if (index > -1) {
+        this.followForm.fileList.splice(index, 1);
+      }
+    },
+    
+    // 提交跟进
+    submitFollow() {
+      // 验证必填项
+      if (!this.followForm.followDate) {
+        message.warning('请选择跟进日期');
+        return;
+      }
+      if (!this.followForm.followMethod) {
+        message.warning('请选择跟进方式');
+        return;
+      }
+      if (this.followForm.isSuccess === null) {
+        message.warning('请选择是否跟进成功');
+        return;
+      }
+      if (!this.followForm.content || !this.followForm.content.trim()) {
+        message.warning('请输入跟进内容');
+        return;
+      }
+      
+      // 这里应该调用接口提交数据
+      console.log('提交跟进数据:', {
+        customerId: this.currentFollowCustomer.id,
+        customerName: this.currentFollowCustomer.name,
+        ...this.followForm
+      });
+      
+      message.success('跟进记录提交成功！');
+      this.closeFollowDrawer();
+    },
+    
+    // 暂存跟进
+    saveFollowDraft() {
+      // 这里应该调用接口保存草稿
+      console.log('暂存跟进数据:', {
+        customerId: this.currentFollowCustomer.id,
+        customerName: this.currentFollowCustomer.name,
+        ...this.followForm
+      });
+      
+      message.success('跟进记录已暂存');
+    },
+    
+    // 关闭通道
+    openContactChannel() {
+      message.info('打开联系通道功能');
+      // 这里可以实现拨打电话、发送短信等功能
+    },
+    
+    // 一键跟签
+    oneClickSign() {
+      Modal.confirm({
+        title: '一键跟签',
+        content: `确定要对客户"${this.currentFollowCustomer.name}"进行一键跟签操作吗？`,
+        okText: '确定',
+        cancelText: '取消',
+        onOk: () => {
+          // 这里应该调用接口执行一键跟签
+          message.success('一键跟签成功');
+          this.closeFollowDrawer();
+        }
+      });
+    },
+    
+    // ============ 卡片选择相关方法 ============
+    
+    // 判断客户是否被选中
+    isCustomerSelected(customerId) {
+      return this.selectedCustomers.includes(customerId);
+    },
+    
+    // 切换客户选择状态
+    toggleCustomerSelection(customerId) {
+      const index = this.selectedCustomers.indexOf(customerId);
+      if (index > -1) {
+        this.selectedCustomers.splice(index, 1);
+      } else {
+        this.selectedCustomers.push(customerId);
+      }
+    },
+    
+    // 全选
+    selectAll() {
+      this.selectedCustomers = this.filteredCustomers.map(customer => customer.id);
+      message.success(`已选中 ${this.selectedCustomers.length} 个客户`);
+    },
+    
+    // 反选
+    selectReverse() {
+      const allIds = this.filteredCustomers.map(customer => customer.id);
+      this.selectedCustomers = allIds.filter(id => !this.selectedCustomers.includes(id));
+      message.success(`已选中 ${this.selectedCustomers.length} 个客户`);
+    },
+    
+    // 移交客户
+    transferCustomers() {
+      if (this.selectedCustomers.length === 0) {
+        message.warning('请先选择要移交的客户');
+        return;
+      }
+      
+      Modal.confirm({
+        title: '移交客户',
+        content: `确定要移交选中的 ${this.selectedCustomers.length} 个客户吗？`,
+        okText: '确定',
+        cancelText: '取消',
+        onOk: () => {
+          // 这里应该调用接口进行客户移交
+          console.log('移交的客户ID:', this.selectedCustomers);
+          
+          // 获取选中的客户信息
+          const selectedCustomerNames = this.customers
+            .filter(c => this.selectedCustomers.includes(c.id))
+            .map(c => c.name)
+            .join('、');
+          
+          message.success(`已成功移交客户：${selectedCustomerNames}`);
+          
+          // 清空选择
+          this.selectedCustomers = [];
+        }
+      });
     }
   }
 };
@@ -1095,6 +1517,7 @@ export default {
   margin-bottom: 0;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .customer-card:hover {
@@ -1102,10 +1525,26 @@ export default {
   transform: translateY(-2px);
 }
 
+.customer-card.card-selected {
+  border: 2px solid #1890ff;
+  box-shadow: 0 4px 16px rgba(24, 144, 255, 0.3);
+}
+
 .card-content {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 24px;
+}
+
+.card-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.card-checkbox :deep(.ant-checkbox-wrapper) {
+  margin: 0;
 }
 
 /* 左侧基本信息 */
@@ -1202,6 +1641,9 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  position: relative;
+  z-index: 1;
+  cursor: default;
 }
 
 .action-buttons {
@@ -1231,6 +1673,10 @@ export default {
   transition: all 0.3s;
   font-size: 14px;
   color: #333;
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .action-btn:hover {
@@ -1278,10 +1724,15 @@ export default {
 .pagination-section {
   margin-top: 20px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 16px;
   background: white;
   border-radius: 8px;
+}
+
+.pagination-left {
+  flex: 0 0 auto;
 }
 
 /* ============ 高级筛选面板样式 ============ */
@@ -1426,6 +1877,165 @@ export default {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* ============ 跟进客户抽屉样式 ============ */
+.follow-drawer-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.customer-info-header {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+}
+
+.customer-basic {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.customer-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.customer-avatar img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.customer-detail {
+  flex: 1;
+}
+
+.customer-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.customer-phone {
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phone-icon {
+  font-size: 16px;
+}
+
+.marketing-tips {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+}
+
+.tips-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fa8c16;
+  margin-bottom: 8px;
+}
+
+.tips-content {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.more-tips-link {
+  font-size: 13px;
+  color: #fa8c16;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.more-tips-link:hover {
+  color: #d46b08;
+  text-decoration: underline;
+}
+
+.follow-form {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.follow-form :deep(.ant-form-item) {
+  margin-bottom: 20px;
+}
+
+.follow-form :deep(.ant-form-item-label) {
+  font-weight: 500;
+}
+
+.follow-form :deep(.ant-upload-list-picture-card) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.follow-form :deep(.ant-upload.ant-upload-select-picture-card) {
+  width: 104px;
+  height: 104px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  text-align: center;
+  vertical-align: top;
+  background-color: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.follow-form :deep(.ant-upload.ant-upload-select-picture-card:hover) {
+  border-color: #1890ff;
+}
+
+.ant-upload-text {
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+}
+
+.follow-drawer-footer {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: center;
+}
+
+.follow-drawer-footer :deep(.ant-space) {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.follow-drawer-footer :deep(.ant-btn) {
+  min-width: 80px;
 }
 
 </style>
